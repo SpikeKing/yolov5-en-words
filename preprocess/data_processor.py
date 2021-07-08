@@ -90,7 +90,7 @@ class DataProcessor(object):
         print('[Info] 处理数据')
         data_lines = read_file(self.file_name)
         n_lines = len(data_lines)
-        data_lines = data_lines[:20]  # 测试
+        # data_lines = data_lines[:20]  # 测试
         random.seed(47)
         random.shuffle(data_lines)
         print('[Info] 文件数: {}'.format(n_lines))
@@ -104,14 +104,14 @@ class DataProcessor(object):
         pool = Pool(processes=100)
 
         for idx, data_line in enumerate(train_lines):
-            DataProcessor.process_line(idx, data_line, self.train_imgs_dir, self.train_lbls_dir)
-            # pool.apply_async(DataProcessor.process_line,
-            #                  (idx, data_line, self.train_imgs_dir, self.train_lbls_dir))
+            # DataProcessor.process_line(idx, data_line, self.train_imgs_dir, self.train_lbls_dir)
+            pool.apply_async(DataProcessor.process_line,
+                             (idx, data_line, self.train_imgs_dir, self.train_lbls_dir))
 
         for idx, data_line in enumerate(val_lines):
-            DataProcessor.process_line(idx, data_line, self.val_imgs_dir, self.val_lbls_dir)
-            # pool.apply_async(DataProcessor.process_line,
-            #                  (idx, data_line, self.val_imgs_dir, self.val_lbls_dir))
+            # DataProcessor.process_line(idx, data_line, self.val_imgs_dir, self.val_lbls_dir)
+            pool.apply_async(DataProcessor.process_line,
+                             (idx, data_line, self.val_imgs_dir, self.val_lbls_dir))
 
         pool.close()
         pool.join()
