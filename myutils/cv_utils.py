@@ -143,7 +143,6 @@ def draw_box(img_bgr, box, color=(0, 0, 255), is_show=True, is_new=True, tk=None
         tk = max(tk, 1)
     else:
         tk = tk
-
     cv2.rectangle(img_bgr, (x_min, y_min), (x_max, y_max), color, tk)
 
     if is_show:
@@ -812,7 +811,7 @@ def get_rec_center(rec):
     return x, y
 
 
-def draw_box_list(img_bgr, box_list, thickness=2, color=None,
+def draw_box_list(img_bgr, box_list, thickness=-1, color=None,
                   is_overlap=True, is_arrow=False, is_text=True, is_show=False, is_new=False, save_name=None):
     """
     绘制矩形列表

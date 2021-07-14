@@ -23,9 +23,9 @@ class DataProcessor(object):
     英语单词数据处理
     """
     def __init__(self):
-        self.file_name = os.path.join(DATA_DIR, 'word_annotations.20210708094856.txt')
+        self.file_name = os.path.join(DATA_DIR, 'word_annotations.20210714153600.txt')
         # self.out_dir = os.path.join(ROOT_DIR, '..', 'datasets', 'ds_en_words_v1')
-        self.out_dir = os.path.join(DATA_DIR, 'ds_en_words_v1')
+        self.out_dir = os.path.join(DATA_DIR, 'ds_en_words_v2')
         mkdir_if_not_exist(self.out_dir)
         self.imgs_dir = os.path.join(self.out_dir, 'images')
         self.lbls_dir = os.path.join(self.out_dir, 'labels')
@@ -64,12 +64,14 @@ class DataProcessor(object):
         # print('[Info] idx: {}'.format(idx))
         data_dict = json.loads(data_line)
         img_url = data_dict['image_url']
-        bbox_list = data_dict['bbox_list']
+        english_bbox_list = data_dict['english_bbox_list']
+        chinese_bbox_list = data_dict['chinese_bbox_list']
+        alter_bbox_list = data_dict['alter_bbox_list']
 
         # 不同文件使用不同的文件名
         file_idx = str(idx).zfill(5)
-        img_path = os.path.join(imgs_dir, 'v4_{}.jpg'.format(file_idx))
-        lbl_path = os.path.join(lbls_dir, 'v4_{}.txt'.format(file_idx))
+        img_path = os.path.join(imgs_dir, 'v2_{}.jpg'.format(file_idx))
+        lbl_path = os.path.join(lbls_dir, 'v2_{}.txt'.format(file_idx))
 
         # 写入图像
         is_ok, img_bgr = download_url_img(img_url)
@@ -77,13 +79,24 @@ class DataProcessor(object):
 
         # 写入标签
         ih, iw, _ = img_bgr.shape  # 高和宽
-        yolo_bboxes = []
-        for bbox in bbox_list:
+        res_bboxes_lines = []
+
+        # 写入3个不同标签
+        for bbox in english_bbox_list:
             bbox_yolo = DataProcessor.convert(iw, ih, bbox)
             bbox_yolo = [str(round(i, 6)) for i in bbox_yolo]
-            yolo_bboxes.append(" ".join(["0", *bbox_yolo]))
+            res_bboxes_lines.append(" ".join(["0", *bbox_yolo]))
+        for bbox in chinese_bbox_list:
+            bbox_yolo = DataProcessor.convert(iw, ih, bbox)
+            bbox_yolo = [str(round(i, 6)) for i in bbox_yolo]
+            res_bboxes_lines.append(" ".join(["1", *bbox_yolo]))
+        for bbox in alter_bbox_list:
+            bbox_yolo = DataProcessor.convert(iw, ih, bbox)
+            bbox_yolo = [str(round(i, 6)) for i in bbox_yolo]
+            res_bboxes_lines.append(" ".join(["2", *bbox_yolo]))
+
         create_file(lbl_path)
-        write_list_to_file(lbl_path, yolo_bboxes)
+        write_list_to_file(lbl_path, res_bboxes_lines)
         print('[Info] idx: {} 处理完成: {}'.format(idx, img_path))
 
     def process(self):
