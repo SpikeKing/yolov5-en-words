@@ -106,12 +106,12 @@ class Processor(object):
         # mkdir_if_not_exist(out_dir)
         for idx, data_line in enumerate(data_lines):
             Processor.process_item(idx, data_line, idet, out_path)
-            break
+            # break
         print('[Info] 分区: {}, 完成'.format(lines_idx))
 
     def process_mul(self):
         data_lines = read_file(self.data_path)
-        n_prc = 1
+        n_prc = 4
         lines_param = []
         gap = len(data_lines) // n_prc
         for i in range(n_prc):
