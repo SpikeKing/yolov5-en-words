@@ -448,12 +448,16 @@ def scale_coords(img1_shape, coords, img0_shape, ratio_pad=None):
         gain = min(img1_shape[0] / img0_shape[0], img1_shape[1] / img0_shape[1])  # gain  = old / new
         pad = (img1_shape[1] - img0_shape[1] * gain) / 2, (img1_shape[0] - img0_shape[0] * gain) / 2  # wh padding
     else:
-        gain = ratio_pad[0][0]
+        gain = ratio_pad[0]
         pad = ratio_pad[1]
 
     coords[:, [0, 2]] -= pad[0]  # x padding
     coords[:, [1, 3]] -= pad[1]  # y padding
-    coords[:, :4] /= gain
+    # coords[:, :4] /= gain
+    coords[:, 0] /= gain[1]
+    coords[:, 1] /= gain[0]
+    coords[:, 2] /= gain[1]
+    coords[:, 3] /= gain[0]
     clip_coords(coords, img0_shape)
     return coords
 

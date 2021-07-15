@@ -10,19 +10,19 @@ Created by C. L. Wang on 2018/7/9
 # from __future__ import absolute_import
 
 import collections
-import os
 import io
-from io import open
+import os
 import random
 import shutil
 import sys
 import time
-import numpy as np
 from datetime import timedelta, datetime
-
+from io import open
 # reload(sys)  # 重置系统参数
 # sys.setdefaultencoding('utf8')  # 避免编码错误
 from itertools import chain
+
+import numpy as np
 
 p = os.path.dirname(os.path.dirname(os.path.dirname(os.path.dirname(os.path.abspath(__file__)))))
 if p not in sys.path:
@@ -879,3 +879,14 @@ def filter_list_by_idxes(data_list, idx_list):
                 sub_list.append(data_list[i])
             res_list.append(sub_list)
     return res_list
+
+
+def check_english_str(string):
+    """
+    检测英文字符串
+    """
+    pattern = re.compile('^[A-Za-z0-9.,:;!?()_*"\'，。 ]+$')
+    if pattern.fullmatch(string):
+        return True
+    else:
+        return False
