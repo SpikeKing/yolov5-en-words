@@ -112,6 +112,7 @@ class Processor(object):
     def process_mul(self):
         data_lines = read_file(self.data_path)
         n_prc = 4
+        print('[Info] 进程数: {}'.format(n_prc))
         lines_param = []
         gap = len(data_lines) // n_prc
         for i in range(n_prc):
