@@ -53,7 +53,7 @@ class Processor(object):
             if box_list:
                 box_list, _ = filer_boxes_by_size(box_list)
                 # print('[Info] box_list: {}'.format(box_list))
-                img_bgr = draw_box_list(img_bgr, box_list, color=color_list[clz], is_new=False)
+                img_bgr = draw_box_list(img_bgr, box_list, color=color_list[int(clz)], is_new=False)
                 cv2.imwrite(out_path, img_bgr)
 
     @staticmethod
@@ -90,7 +90,7 @@ class Processor(object):
             out_dict = {
                 "image_url": image_url,
                 "angle": angle,
-                "ocr_result": pos_data,
+                "ocr_result": hw_data,
                 "clz_dict": clz_dict
             }
             out_line = json.dumps(out_dict)
@@ -119,18 +119,56 @@ class Processor(object):
             lines_param.append(data_lines[i*gap:(i+1)*gap])
         pool = Pool(n_prc)
         for idx, lines in enumerate(lines_param):
-            Processor.process(idx, lines, self.out_path)
-            # pool.apply_async(Processor.process, (lines, self.out_path))
+            # Processor.process(idx, lines, self.out_path)
+            pool.apply_async(Processor.process, (idx, lines, self.out_path))
             # break
         pool.close()
         pool.join()
         print('*' * 100)
         print('[Info] 处理完成: {}'.format(self.out_path))
 
+    def data_checker(self):
+        file_path = os.path.join(DATA_DIR, 'en_full_with_alter.out-20210715235808.txt')
+        out_path = os.path.join(DATA_DIR, 'en_full_with_alter.out-filter.txt')
+        create_file(out_path)
+        out_dir = os.path.join(DATA_DIR, "en_full_with_alter")
+        mkdir_if_not_exist(out_dir)
+
+        data_lines = read_file(file_path)
+        # random.seed(47)
+        # random.shuffle(data_lines)
+        for idx, data_line in enumerate(data_lines):
+            # if idx == 50:
+            #     break
+            data_dict = json.loads(data_line)
+            image_url = data_dict["image_url"]
+            angle = data_dict["angle"]
+            pos_data = data_dict["ocr_result"]
+            clz_dict = data_dict["clz_dict"]
+            # _, img_bgr = download_url_img(image_url)
+            # img_bgr = rotate_img_for_4angle(img_bgr, angle)  # 旋转图像
+            rec_box = Processor.parse_pos_2_rec(pos_data)
+            box = rec2bbox(rec_box)
+            w = box[2] - box[0]
+            h = box[3] - box[1]
+            ratio = w // h
+            area = w*h
+            if ratio <= 7 or area < 10000:
+                continue
+            # print('[Info] area: {}, ratio: {}'.format(w*h, ratio))
+            # img_patch = get_cropped_patch(img_bgr, box)
+            # image_name = image_url.split("/")[-1].split(".")[0]
+            # out_image_path = os.path.join(out_dir, "{}_{}.jpg".format(image_name, idx))
+            # Processor.draw_clz_dict(clz_dict, img_patch, out_image_path)
+            write_line(out_path, data_line)
+            print('[Info] 处理完成: {}'.format(idx))
+        print("[Info] 处理完成: {}".format(out_dir))
+
 
 def main():
     pro = Processor()
-    pro.process_mul()
+    # pro.process_mul()
+    pro.data_checker()
 
 
 if __name__ == '__main__':
