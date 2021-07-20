@@ -6,16 +6,17 @@ Created by C. L. Wang on 19.7.21
 """
 
 import os
-import cv2
 import sys
 from multiprocessing.pool import Pool
+
+import cv2
 
 p = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if p not in sys.path:
     sys.path.append(p)
 
 from detect_image import ImgDetector
-from myutils.cv_utils import bbox2rec, rec2bbox, get_cropped_patch, draw_box, draw_rec_list, show_img_bgr
+from myutils.cv_utils import bbox2rec, rec2bbox, get_cropped_patch, draw_rec_list, show_img_bgr
 from myutils.project_utils import *
 from root_dir import DATA_DIR
 
@@ -188,7 +189,7 @@ class ProcessorV2(object):
         show_img_bgr(img_bgr)
 
     def check_data(self):
-        data_path = os.path.join(DATA_DIR, 'en_lowscore.anno-v1.txt')
+        data_path = os.path.join(DATA_DIR, 'en_lowscore.anno-v1_1.txt')
         out_dir = os.path.join(DATA_DIR, 'en_lowscore_anno')
         mkdir_if_not_exist(out_dir)
         data_lines = read_file(data_path)
@@ -196,17 +197,23 @@ class ProcessorV2(object):
         random.shuffle(data_lines)
         print('[Info] 数据行数: {}'.format(len(data_lines)))
         for idx, data_line in enumerate(data_lines):
-            if idx == 5:
-                break
+            # if idx == 5:
+            #     break
             data_dict = json.loads(data_line)
             image_url = data_dict["image_url"]
+            out_name = image_url.split("/")[-1]
+
+            if out_name != "0900c7acdf107184d65956a785e55672.jpg":
+                continue
+
             _, img_bgr = download_url_img(image_url)
             cv2.imwrite(os.path.join(DATA_DIR, 'tmp.jpg'), img_bgr)
             img_bgr = cv2.imread(os.path.join(DATA_DIR, 'tmp.jpg'))
             polygon_annotation = data_dict["polygon_annotation"]
 
-            out_name = image_url.split("/")[-1]
-            self.draw_polygon_annotation(img_bgr, polygon_annotation, os.path.join(out_dir, out_name))
+            out_img_path = os.path.join(out_dir, out_name)
+            self.draw_polygon_annotation(img_bgr, polygon_annotation, out_img_path)
+            print('[Info] 绘制: {}'.format(out_img_path))
 
 
 def main():

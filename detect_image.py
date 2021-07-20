@@ -101,33 +101,41 @@ class ImgDetector(object):
         return img, shapes
 
     @staticmethod
-    def filter_clz_dict(clz_dict):
+    def filter_clz_dict(clz_dict,  m_label="0"):
         """
         过滤不同类别框之间的重叠部分
         """
-        clz_list = clz_dict.keys()
-        if 0 in clz_list and len(clz_list) > 1:
+        clz_list = list(clz_dict.keys())
+
+        # 没有主标签 或者 标签只有1个
+        if len(clz_list) <= 1 or m_label not in clz_list:
+            res_dict = clz_dict
+        else:
             res_dict = collections.defaultdict(list)
-            en_boxes = clz_dict[0]
+            main_boxes = clz_dict[m_label]
             for clz in clz_list:
-                if clz == 0:
+                if clz == m_label:
                     continue
                 other_boxes = clz_dict[clz]
                 flags = len(other_boxes) * [True]
                 for idx, other_box in enumerate(other_boxes):
-                    for en_box in en_boxes:
-                        v_iou = min_iou(en_box, other_box)
+                    for main_box in main_boxes:
+                        v_iou = min_iou(main_box, other_box)
                         if v_iou > 0.6:
                             flags[idx] = False
                             continue
                 for idx, f in enumerate(flags):
                     if f:
                         res_dict[clz].append(other_boxes[idx])
+            res_dict[m_label] = main_boxes
 
-            res_dict[0] = en_boxes
-            return res_dict
-        else:
-            return clz_dict
+        # 过滤重叠框
+        for idx, clz in enumerate(res_dict.keys()):
+            box_list = res_dict[clz]
+            box_list, _ = filer_boxes_by_size(box_list)
+            res_dict[clz] = box_list
+
+        return res_dict
 
     def detect_image(self, img_bgr):
         """
@@ -147,17 +155,15 @@ class ImgDetector(object):
             for *xyxy, conf, cls in predn:  # 绘制图像
                 xyxy = [int(i) for i in xyxy]
                 conf = round(conf, 4)
-                cls = int(cls)
+                cls = str(int(cls))
                 if conf > 0.2:
                     clz_dict[cls].append(xyxy)
-            clz_dict = self.filter_clz_dict(clz_dict)
+        clz_dict = self.filter_clz_dict(clz_dict)  # 过滤
         return clz_dict
 
 
-
-
 def process():
-    img_path = os.path.join(DATA_DIR, 'images', '00177875e4a10810e0139c72f7d594cf_0.jpg')
+    img_path = os.path.join(DATA_DIR, 'images', '0900c7acdf107184d65956a785e55672.jpg')
     # img_path = os.path.join(DATA_DIR, 'images', '00458809b152dbd9d696da654fb7a2dd_2.jpg')
     # img_path = os.path.join(DATA_DIR, 'images', '009a3a4059168d1a6ace58a6ab536f66_2.jpg')
     img_bgr = cv2.imread(img_path)
@@ -216,10 +222,41 @@ def process_v3():
         break
 
 
+def process_item():
+
+    def modify_axis(boxes, base_box):
+        x_min, y_min, _, _ = base_box
+        res_boxes = []
+        for box in boxes:
+            box = [box[0] + x_min, box[1] + y_min, box[2] + x_min, box[3] + y_min]
+            res_boxes.append(box)
+        return res_boxes
+
+    img_path = os.path.join(DATA_DIR, 'images', '10b17c304b1f2aa91c648feea36e5efa_0.jpg')
+    rec_box = [[157, 773], [1045, 773], [1045, 829], [157, 829]]
+    line_box = rec2bbox(rec_box)
+    img_bgr = cv2.imread(img_path)
+    img_patch = get_cropped_patch(img_bgr, line_box)
+    idet = ImgDetector()
+    clz_dict = idet.detect_image(img_patch)
+    color_list = [(0, 0, 255), (0, 255, 0), (255, 0, 0)]
+    keys = list(clz_dict.keys())
+    for idx, clz in enumerate(keys):
+        clz_idx = int(clz)
+        box_list = clz_dict[clz]
+
+        box_list = modify_axis(box_list, line_box)
+
+        img_bgr = draw_box_list(
+            img_bgr, thickness=3, color=color_list[clz_idx],
+            is_new=False, box_list=box_list, save_name="tmp1.jpg")
+
+
 def main():
-    process()
+    # process()
     # process_v2()
     # process_v3()
+    process_item()
 
 
 if __name__ == '__main__':

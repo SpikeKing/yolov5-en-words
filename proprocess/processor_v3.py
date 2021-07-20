@@ -12,9 +12,9 @@ from root_dir import DATA_DIR
 class ProcessorV3(object):
     def __init__(self):
         self.file1_name = os.path.join(DATA_DIR, 'en_full.json')
-        self.file2_name = os.path.join(DATA_DIR, 'sanghu-zj_handwrite_reco_word_cut_anno_result_file_for_model_transfer_with_offset.txt')
-        self.out_name = os.path.join(DATA_DIR, 'sanghu-zj_handwrite_reco_word_cut_anno_result_file_for_model_transfer_with_offset.m.txt')
-        self.angle_err = os.path.join(DATA_DIR, 'en_full_with_alter.anno-angle.txt')
+        self.file2_name = os.path.join(DATA_DIR, 'anno_result_file_for_model_transfer.txt')
+        self.out_name = os.path.join(DATA_DIR, 'anno_result_file_for_model_transfer.m.txt')
+        # self.angle_err = os.path.join(DATA_DIR, 'en_full_with_alter.anno-angle.txt')
 
     def process(self):
         print("[Info] 处理数据")
