@@ -14,7 +14,7 @@ if p not in sys.path:
     sys.path.append(p)
 
 from detect_image import ImgDetector
-from myutils.cv_utils import *
+from myutils.cv_utils import bbox2rec, rec2bbox, get_cropped_patch
 from myutils.project_utils import *
 from root_dir import DATA_DIR
 
@@ -72,14 +72,14 @@ class ProcessorV2(object):
                 item_list.append(item)
         return item_list
 
-    @staticmethod
-    def draw_clz_dict(clz_dict, img_bgr, out_path):
-        color_list = [(0, 0, 255), (0, 255, 0), (255, 0, 0)]
-        for jdx, clz in enumerate(clz_dict.keys()):
-            box_list = clz_dict[clz]
-            if box_list:
-                img_bgr = draw_box_list(img_bgr, box_list, color=color_list[int(clz)], is_new=False)
-                cv2.imwrite(out_path, img_bgr)
+    # @staticmethod
+    # def draw_clz_dict(clz_dict, img_bgr, out_path):
+    #     color_list = [(0, 0, 255), (0, 255, 0), (255, 0, 0)]
+    #     for jdx, clz in enumerate(clz_dict.keys()):
+    #         box_list = clz_dict[clz]
+    #         if box_list:
+    #             img_bgr = draw_box_list(img_bgr, box_list, color=color_list[int(clz)], is_new=False)
+    #             cv2.imwrite(out_path, img_bgr)
 
     @staticmethod
     def process_item(idx, data_line, detector, out_path):
@@ -127,7 +127,10 @@ class ProcessorV2(object):
         print('[Info] 分区: {}, 文件数量: {}'.format(block_idx, len(data_lines)))
         detector = ImgDetector()
         for idx, data_line in enumerate(data_lines):
-            ProcessorV2.process_item(idx, data_line, detector, out_path)
+            try:
+                ProcessorV2.process_item(idx, data_line, detector, out_path)
+            except Exception as e:
+                print(e)
         print('[Info] 分区: {}, 完成'.format(block_idx))
 
     def process(self):
@@ -146,8 +149,8 @@ class ProcessorV2(object):
             lines_param.append(data_lines[i * gap:(i + 1) * gap])
         pool = Pool(n_prc)
         for idx, lines in enumerate(lines_param):
-            # ProcessorV2.process_block(idx, lines, self.out_path)
-            pool.apply_async(ProcessorV2.process_block, (idx, lines, self.out_path))
+            ProcessorV2.process_block(idx, lines, self.out_path)
+            # pool.apply_async(ProcessorV2.process_block, (idx, lines, self.out_path))
         pool.close()
         pool.join()
         print('*' * 100)
@@ -163,31 +166,31 @@ class ProcessorV2(object):
             res_boxes.append(box)
         return res_boxes
 
-    def check_data(self):
-        data_path = os.path.join(DATA_DIR, 'en_lowscore.anno-20210720114508.txt')
-        out_dir = os.path.join(DATA_DIR, 'en_lowscore_anno')
-        mkdir_if_not_exist(out_dir)
-        data_lines = read_file(data_path)
-        random.seed(47)
-        random.shuffle(data_lines)
-        print('[Info] 数据行数: {}'.format(len(data_lines)))
-        for idx, data_line in enumerate(data_lines):
-            if idx == 20:
-                break
-            data_dict = json.loads(data_line)
-            image_url = data_dict["image_url"]
-            _, img_bgr = download_url_img(image_url)
-            polygon_annotation = data_dict["polygon_annotation"]
-
-            out_name = image_url.split("/")[-1]
-            rec_list = []
-            for p_idx, pa in enumerate(polygon_annotation):
-                print(pa)
-                rec = pa["coords"]
-                rec_list.append(rec2bbox(rec))
-                draw_box(img_bgr, rec2bbox(rec), is_show=True)
-            draw_box_list(img_bgr, rec_list, is_show=False,
-                          is_text=False, save_name=os.path.join(out_dir, out_name))
+    # def check_data(self):
+    #     data_path = os.path.join(DATA_DIR, 'en_lowscore.anno-20210720114508.txt')
+    #     out_dir = os.path.join(DATA_DIR, 'en_lowscore_anno')
+    #     mkdir_if_not_exist(out_dir)
+    #     data_lines = read_file(data_path)
+    #     random.seed(47)
+    #     random.shuffle(data_lines)
+    #     print('[Info] 数据行数: {}'.format(len(data_lines)))
+    #     for idx, data_line in enumerate(data_lines):
+    #         if idx == 20:
+    #             break
+    #         data_dict = json.loads(data_line)
+    #         image_url = data_dict["image_url"]
+    #         _, img_bgr = download_url_img(image_url)
+    #         polygon_annotation = data_dict["polygon_annotation"]
+    #
+    #         out_name = image_url.split("/")[-1]
+    #         rec_list = []
+    #         for p_idx, pa in enumerate(polygon_annotation):
+    #             print(pa)
+    #             rec = pa["coords"]
+    #             rec_list.append(rec2bbox(rec))
+    #             draw_box(img_bgr, rec2bbox(rec), is_show=True)
+    #         draw_box_list(img_bgr, rec_list, is_show=False,
+    #                       is_text=False, save_name=os.path.join(out_dir, out_name))
 
 
 def main():
