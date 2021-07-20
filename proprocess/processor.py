@@ -251,12 +251,36 @@ class Processor(object):
         pool.join()
         print('[Info] 全部完成: {}'.format(out_path))
 
+    def anno_check(self):
+        img_path = os.path.join(DATA_DIR, 'en_full_with_alter.anno-20210716155344.txt')
+        out_dir = os.path.join(DATA_DIR, 'en_full_with_alter_anno')
+        mkdir_if_not_exist(out_dir)
+        data_lines = read_file(img_path)
+        random.seed(47)
+        random.shuffle(data_lines)
+        print('[Info] 数据行数: {}'.format(len(data_lines)))
+        for idx, data_line in enumerate(data_lines):
+            if idx == 20:
+                break
+            data_dict = json.loads(data_line)
+            image_url = data_dict["image_url"]
+            out_name = image_url.split("/")[-1].split(".")[0]
+            out_name = "{}-check.jpg".format(out_name)
+            out_path = os.path.join(out_dir, out_name)
+            polygon_annotation = data_dict["polygon_annotation"]
+            rec_list = []
+            for pa in polygon_annotation:
+                coords = pa["coords"]
+                rec_list.append(coords)
+            _, img_bgr = download_url_img(image_url)
+            draw_rec_list(img_bgr, rec_list, save_name=out_path)
 
 def main():
     pro = Processor()
-    # pro.process_mul()
+    pro.process_mul()
     # pro.data_checker()
-    pro.format_data()
+    # pro.format_data()
+    # pro.anno_check()
 
 
 if __name__ == '__main__':
