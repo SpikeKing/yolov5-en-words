@@ -141,7 +141,7 @@ class ProcessorV2(object):
         data_dict = json.loads(data_raw)
         data_lines = [(k, v) for k, v in data_dict.items()]
 
-        n_prc = 2
+        n_prc = 4
         print('[Info] 进程数: {}'.format(n_prc))
         lines_param = []
         gap = len(data_lines) // n_prc
@@ -149,8 +149,8 @@ class ProcessorV2(object):
             lines_param.append(data_lines[i * gap:(i + 1) * gap])
         pool = Pool(n_prc)
         for idx, lines in enumerate(lines_param):
-            ProcessorV2.process_block(idx, lines, self.out_path)
-            # pool.apply_async(ProcessorV2.process_block, (idx, lines, self.out_path))
+            # ProcessorV2.process_block(idx, lines, self.out_path)
+            pool.apply_async(ProcessorV2.process_block, (idx, lines, self.out_path))
         pool.close()
         pool.join()
         print('*' * 100)
