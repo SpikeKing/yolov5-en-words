@@ -6,6 +6,7 @@ Created by C. L. Wang on 19.7.21
 """
 
 import os
+import cv2
 import sys
 from multiprocessing.pool import Pool
 
@@ -14,7 +15,7 @@ if p not in sys.path:
     sys.path.append(p)
 
 from detect_image import ImgDetector
-from myutils.cv_utils import bbox2rec, rec2bbox, get_cropped_patch
+from myutils.cv_utils import bbox2rec, rec2bbox, get_cropped_patch, draw_box, draw_rec_list, show_img_bgr
 from myutils.project_utils import *
 from root_dir import DATA_DIR
 
@@ -72,14 +73,16 @@ class ProcessorV2(object):
                 item_list.append(item)
         return item_list
 
-    # @staticmethod
-    # def draw_clz_dict(clz_dict, img_bgr, out_path):
-    #     color_list = [(0, 0, 255), (0, 255, 0), (255, 0, 0)]
-    #     for jdx, clz in enumerate(clz_dict.keys()):
-    #         box_list = clz_dict[clz]
-    #         if box_list:
-    #             img_bgr = draw_box_list(img_bgr, box_list, color=color_list[int(clz)], is_new=False)
-    #             cv2.imwrite(out_path, img_bgr)
+    @staticmethod
+    def save_img_patch(img_bgr, img_name):
+        """
+        上传图像
+        """
+        from x_utils.oss_utils import save_img_2_oss
+        oss_root_dir = "zhengsheng.wcl/Character-Detection/datasets/english-words-imgs-{}/"\
+            .format(get_current_day_str())
+        img_url = save_img_2_oss(img_bgr, img_name, oss_root_dir)
+        return img_url
 
     @staticmethod
     def process_item(idx, data_line, detector, out_path):
@@ -90,6 +93,8 @@ class ProcessorV2(object):
 
         _, img_bgr = download_url_img(image_url)
         height, width, _ = img_bgr.shape
+        image_name = image_url.split("/")[-1]
+        image_url_convert = ProcessorV2.save_img_patch(img_bgr, image_name)
 
         n_alter = 0
         res_items = []
@@ -112,7 +117,8 @@ class ProcessorV2(object):
             res_items += (item_list + [hw_item])
 
         res_dict = {
-            "image_url": image_url,
+            "image_url": image_url_convert,
+            "image_original_url": image_url,
             "height": str(height),
             "width": str(width),
             "polygon_annotation": res_items
@@ -166,31 +172,41 @@ class ProcessorV2(object):
             res_boxes.append(box)
         return res_boxes
 
-    # def check_data(self):
-    #     data_path = os.path.join(DATA_DIR, 'en_lowscore.anno-20210720114508.txt')
-    #     out_dir = os.path.join(DATA_DIR, 'en_lowscore_anno')
-    #     mkdir_if_not_exist(out_dir)
-    #     data_lines = read_file(data_path)
-    #     random.seed(47)
-    #     random.shuffle(data_lines)
-    #     print('[Info] 数据行数: {}'.format(len(data_lines)))
-    #     for idx, data_line in enumerate(data_lines):
-    #         if idx == 20:
-    #             break
-    #         data_dict = json.loads(data_line)
-    #         image_url = data_dict["image_url"]
-    #         _, img_bgr = download_url_img(image_url)
-    #         polygon_annotation = data_dict["polygon_annotation"]
-    #
-    #         out_name = image_url.split("/")[-1]
-    #         rec_list = []
-    #         for p_idx, pa in enumerate(polygon_annotation):
-    #             print(pa)
-    #             rec = pa["coords"]
-    #             rec_list.append(rec2bbox(rec))
-    #             draw_box(img_bgr, rec2bbox(rec), is_show=True)
-    #         draw_box_list(img_bgr, rec_list, is_show=False,
-    #                       is_text=False, save_name=os.path.join(out_dir, out_name))
+    def draw_polygon_annotation(self, img_bgr, polygon_annotation, save_name):
+        word_rec_list = []
+        text_rec_list = []
+        for p_idx, pa in enumerate(polygon_annotation):
+            rec = pa["coords"]
+            type_str = pa["type"]
+            if type_str != "WenBenHang":
+                word_rec_list.append(rec)
+            else:
+                text_rec_list.append(rec)
+        img_bgr = draw_rec_list(img_bgr, word_rec_list, is_show=False, thickness=-1)
+        show_img_bgr(img_bgr)
+        draw_rec_list(img_bgr, text_rec_list, is_show=False, thickness=5, save_name=save_name)
+        show_img_bgr(img_bgr)
+
+    def check_data(self):
+        data_path = os.path.join(DATA_DIR, 'en_lowscore.anno-v1.txt')
+        out_dir = os.path.join(DATA_DIR, 'en_lowscore_anno')
+        mkdir_if_not_exist(out_dir)
+        data_lines = read_file(data_path)
+        random.seed(47)
+        random.shuffle(data_lines)
+        print('[Info] 数据行数: {}'.format(len(data_lines)))
+        for idx, data_line in enumerate(data_lines):
+            if idx == 5:
+                break
+            data_dict = json.loads(data_line)
+            image_url = data_dict["image_url"]
+            _, img_bgr = download_url_img(image_url)
+            cv2.imwrite(os.path.join(DATA_DIR, 'tmp.jpg'), img_bgr)
+            img_bgr = cv2.imread(os.path.join(DATA_DIR, 'tmp.jpg'))
+            polygon_annotation = data_dict["polygon_annotation"]
+
+            out_name = image_url.split("/")[-1]
+            self.draw_polygon_annotation(img_bgr, polygon_annotation, os.path.join(out_dir, out_name))
 
 
 def main():

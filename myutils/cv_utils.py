@@ -859,7 +859,8 @@ def draw_box_list(img_bgr, box_list, thickness=-1, color=None,
     return ori_img
 
 
-def draw_rec_list(img_bgr, rec_list, color=None, is_text=True, is_show=False, is_new=False, save_name=None):
+def draw_rec_list(img_bgr, rec_list, color=None, thickness=-1,
+                  is_text=False, is_show=False, is_new=False, save_name=None):
     """
     绘制4点的四边形
     """
@@ -877,11 +878,15 @@ def draw_rec_list(img_bgr, rec_list, color=None, is_text=True, is_show=False, is
 
     # 绘制颜色块
     for idx, (rec, color) in enumerate(zip(rec_list, color_list)):
-        rec_arr = np.array(rec).astype(np.int32)
-        ori_img = cv2.fillPoly(ori_img, [rec_arr], color_list[idx])
+        rec_arr = np.array(rec, dtype=np.int32)
+        if thickness == -1:
+            ori_img = cv2.fillPoly(ori_img, [rec_arr], color_list[idx])
+        else:
+            ori_img = cv2.polylines(ori_img, [rec_arr], True, tuple(color_list[idx]), thickness=thickness)
+        ori_img = np.clip(ori_img, 0, 255)
 
-    ori_img = cv2.addWeighted(ori_img, 0.4, img_copy, 0.6, 0)
-    ori_img = np.clip(ori_img, 0, 255)
+    if thickness == -1:
+        ori_img = cv2.addWeighted(ori_img, 0.4, img_copy, 0.6, 0)
 
     # 绘制方向和序号
     for idx, rec in enumerate(rec_list):
