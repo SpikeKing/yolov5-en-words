@@ -138,7 +138,7 @@ class ProcessorV2(object):
         data_dict = json.loads(data_raw)
         data_lines = [(k, v) for k, v in data_dict.items()]
 
-        n_prc = 4
+        n_prc = 2
         print('[Info] 进程数: {}'.format(n_prc))
         lines_param = []
         gap = len(data_lines) // n_prc
