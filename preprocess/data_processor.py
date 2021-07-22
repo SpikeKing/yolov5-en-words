@@ -125,14 +125,14 @@ class DataProcessor(object):
         pool = Pool(processes=100)
 
         for idx, data_line in enumerate(train_lines):
-            # DataProcessor.process_line(idx, data_line, self.train_imgs_dir, self.train_lbls_dir)
-            pool.apply_async(DataProcessor.process_line,
-                             (idx, data_line, self.train_imgs_dir, self.train_lbls_dir))
+            DataProcessor.process_line(idx, data_line, self.train_imgs_dir, self.train_lbls_dir)
+            # pool.apply_async(DataProcessor.process_line,
+            #                  (idx, data_line, self.train_imgs_dir, self.train_lbls_dir))
 
         for idx, data_line in enumerate(val_lines):
-            # DataProcessor.process_line(idx, data_line, self.val_imgs_dir, self.val_lbls_dir)
-            pool.apply_async(DataProcessor.process_line,
-                             (idx, data_line, self.val_imgs_dir, self.val_lbls_dir))
+            DataProcessor.process_line(idx, data_line, self.val_imgs_dir, self.val_lbls_dir)
+            # pool.apply_async(DataProcessor.process_line,
+            #                  (idx, data_line, self.val_imgs_dir, self.val_lbls_dir))
 
         pool.close()
         pool.join()
