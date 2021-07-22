@@ -20,9 +20,9 @@ from root_dir import DATA_DIR
 
 class DataProcessorV2(object):
     def __init__(self):
-        self.file_path = os.path.join(DATA_DIR, "hw_data_v1_20210722.txt")
+        self.file_path = os.path.join(DATA_DIR, "hw_data_v2_20210722.txt")
         self.out_path = os.path.join(
-            DATA_DIR, "hw_data_v1_20210722.out-{}.txt".format(get_current_time_str()))
+            DATA_DIR, "hw_data_v2_20210722.out-{}.txt".format(get_current_time_str()))
 
     def list_2_rec(self, anno_box_str):
         """
@@ -125,11 +125,13 @@ class DataProcessorV2(object):
 
         pool = Pool(processes=100)
         for img_idx, img_url in enumerate(img_data_dict.keys()):
+            # DataProcessorV2.process_img(img_idx, img_url, img_data_dict, self.out_path)
             pool.apply_async(DataProcessorV2.process_img, (img_idx, img_url, img_data_dict, self.out_path))
         pool.close()
         pool.join()
 
         print('[Info] 处理完成: {}'.format(self.out_path))
+
 
 def main():
     dp2 = DataProcessorV2()
