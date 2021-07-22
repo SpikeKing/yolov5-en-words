@@ -26,7 +26,6 @@ class DataProcessor(object):
         # self.file_name = os.path.join(DATA_DIR, 'word_annotations.20210714153600.txt')
         self.file_name = os.path.join(DATA_DIR, 'hw_data_v1_20210722.out-20210722173343.txt')
         # self.file_name = os.path.join(DATA_DIR, 'hw_data_v2_20210722.out-20210722175706.txt')
-        self.file_name = os.path.join(DATA_DIR, 'word_annotations.20210714153600.txt')
         # self.out_dir = os.path.join(ROOT_DIR, '..', 'datasets', 'ds_en_words_v1')
         self.out_dir = os.path.join(DATA_DIR, 'ds_en_words_v3')
         mkdir_if_not_exist(self.out_dir)
@@ -66,7 +65,6 @@ class DataProcessor(object):
     def process_line(idx, data_line, imgs_dir, lbls_dir):
         # print('[Info] idx: {}'.format(idx))
         data_dict = json.loads(data_line)
-
         # img_url = data_dict['image_url']
         # english_bbox_list = data_dict['english_bbox_list']
         # chinese_bbox_list = data_dict['chinese_bbox_list']
@@ -108,7 +106,7 @@ class DataProcessor(object):
         print('[Info] idx: {} 处理完成: {}'.format(idx, img_path))
 
     def process(self):
-        print('[Info] 处理数据')
+        print('[Info] 处理数据: {}'.format(self.file_name))
         data_lines = read_file(self.file_name)
         n_lines = len(data_lines)
         # data_lines = data_lines[:20]  # 测试
@@ -125,14 +123,14 @@ class DataProcessor(object):
         pool = Pool(processes=100)
 
         for idx, data_line in enumerate(train_lines):
-            DataProcessor.process_line(idx, data_line, self.train_imgs_dir, self.train_lbls_dir)
-            # pool.apply_async(DataProcessor.process_line,
-            #                  (idx, data_line, self.train_imgs_dir, self.train_lbls_dir))
+            # DataProcessor.process_line(idx, data_line, self.train_imgs_dir, self.train_lbls_dir)
+            pool.apply_async(DataProcessor.process_line,
+                             (idx, data_line, self.train_imgs_dir, self.train_lbls_dir))
 
         for idx, data_line in enumerate(val_lines):
-            DataProcessor.process_line(idx, data_line, self.val_imgs_dir, self.val_lbls_dir)
-            # pool.apply_async(DataProcessor.process_line,
-            #                  (idx, data_line, self.val_imgs_dir, self.val_lbls_dir))
+            # DataProcessor.process_line(idx, data_line, self.val_imgs_dir, self.val_lbls_dir)
+            pool.apply_async(DataProcessor.process_line,
+                             (idx, data_line, self.val_imgs_dir, self.val_lbls_dir))
 
         pool.close()
         pool.join()
