@@ -23,9 +23,12 @@ class DataProcessor(object):
     英语单词数据处理
     """
     def __init__(self):
+        # self.file_name = os.path.join(DATA_DIR, 'word_annotations.20210714153600.txt')
+        self.file_name = os.path.join(DATA_DIR, 'hw_data_v1_20210722.out-20210722173343.txt')
+        # self.file_name = os.path.join(DATA_DIR, 'hw_data_v2_20210722.out-20210722175706.txt')
         self.file_name = os.path.join(DATA_DIR, 'word_annotations.20210714153600.txt')
         # self.out_dir = os.path.join(ROOT_DIR, '..', 'datasets', 'ds_en_words_v1')
-        self.out_dir = os.path.join(DATA_DIR, 'ds_en_words_v2')
+        self.out_dir = os.path.join(DATA_DIR, 'ds_en_words_v3')
         mkdir_if_not_exist(self.out_dir)
         self.imgs_dir = os.path.join(self.out_dir, 'images')
         self.lbls_dir = os.path.join(self.out_dir, 'labels')
@@ -63,15 +66,20 @@ class DataProcessor(object):
     def process_line(idx, data_line, imgs_dir, lbls_dir):
         # print('[Info] idx: {}'.format(idx))
         data_dict = json.loads(data_line)
-        img_url = data_dict['image_url']
-        english_bbox_list = data_dict['english_bbox_list']
-        chinese_bbox_list = data_dict['chinese_bbox_list']
-        alter_bbox_list = data_dict['alter_bbox_list']
+
+        # img_url = data_dict['image_url']
+        # english_bbox_list = data_dict['english_bbox_list']
+        # chinese_bbox_list = data_dict['chinese_bbox_list']
+        # alter_bbox_list = data_dict['alter_bbox_list']
+        img_url = data_dict['img_patch_url']
+        english_bbox_list = data_dict['english_list']
+        chinese_bbox_list = data_dict['chinese_list']
+        alter_bbox_list = data_dict['tugai_list']
 
         # 不同文件使用不同的文件名
         file_idx = str(idx).zfill(5)
-        img_path = os.path.join(imgs_dir, 'v2_{}.jpg'.format(file_idx))
-        lbl_path = os.path.join(lbls_dir, 'v2_{}.txt'.format(file_idx))
+        img_path = os.path.join(imgs_dir, 'v3_{}.jpg'.format(file_idx))
+        lbl_path = os.path.join(lbls_dir, 'v3_{}.txt'.format(file_idx))
 
         # 写入图像
         is_ok, img_bgr = download_url_img(img_url)
