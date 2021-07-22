@@ -24,8 +24,8 @@ class DataProcessor(object):
     """
     def __init__(self):
         # self.file_name = os.path.join(DATA_DIR, 'word_annotations.20210714153600.txt')
-        # self.file_name = os.path.join(DATA_DIR, 'hw_data_v1_20210722.out-20210722173343.txt')
-        self.file_name = os.path.join(DATA_DIR, 'hw_data_v2_20210722.out-20210722175706.txt')
+        self.file_name = os.path.join(DATA_DIR, 'hw_data_v1_20210722.out-20210722173343.txt')
+        # self.file_name = os.path.join(DATA_DIR, 'hw_data_v2_20210722.out-20210722175706.txt')
         # self.out_dir = os.path.join(ROOT_DIR, '..', 'datasets', 'ds_en_words_v1')
         self.out_dir = os.path.join(DATA_DIR, 'ds_en_words_v3')
         mkdir_if_not_exist(self.out_dir)
@@ -76,8 +76,8 @@ class DataProcessor(object):
 
         # 不同文件使用不同的文件名
         file_idx = str(idx).zfill(5)
-        img_path = os.path.join(imgs_dir, 'v3_{}.jpg'.format(file_idx))
-        lbl_path = os.path.join(lbls_dir, 'v3_{}.txt'.format(file_idx))
+        img_path = os.path.join(imgs_dir, 'v3_1_{}.jpg'.format(file_idx))
+        lbl_path = os.path.join(lbls_dir, 'v3_1_{}.txt'.format(file_idx))
 
         # 写入图像
         is_ok, img_bgr = download_url_img(img_url)
