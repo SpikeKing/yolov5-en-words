@@ -24,8 +24,8 @@ class DataProcessor(object):
     """
     def __init__(self):
         # self.file_name = os.path.join(DATA_DIR, 'word_annotations.20210714153600.txt')
-        self.file_name = os.path.join(DATA_DIR, 'hw_data_v1_20210722.out-20210722173343.txt')
-        # self.file_name = os.path.join(DATA_DIR, 'hw_data_v2_20210722.out-20210722175706.txt')
+        # self.file_name = os.path.join(DATA_DIR, 'hw_data_v1_20210722.out-20210722173343.txt')
+        self.file_name = os.path.join(DATA_DIR, 'hw_data_v2_20210722.out-20210722175706.txt')
         # self.out_dir = os.path.join(ROOT_DIR, '..', 'datasets', 'ds_en_words_v1')
         self.out_dir = os.path.join(DATA_DIR, 'ds_en_words_v3')
         mkdir_if_not_exist(self.out_dir)
