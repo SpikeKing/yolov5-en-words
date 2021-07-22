@@ -5,8 +5,9 @@ Copyright (c) 2019. All rights reserved.
 Created by C. L. Wang on 2020/3/13
 """
 
-import cv2
 import copy
+
+import cv2
 import numpy as np
 
 
@@ -126,15 +127,11 @@ def draw_box(img_bgr, box, color=(0, 0, 255), is_show=True, is_new=True, tk=None
     """
     绘制box
     """
-    import cv2
-    import copy
-
     if is_new:
         img_bgr = copy.deepcopy(img_bgr)
 
     x_min, y_min, x_max, y_max = box
     x_min, y_min, x_max, y_max = int(x_min), int(y_min), int(x_max), int(y_max)
-    # print(x_min, y_min, x_max, y_max)
 
     ih, iw, _ = img_bgr.shape
     if not tk:
@@ -240,7 +237,7 @@ def draw_pie(labels, sizes):
     plt.show()
 
 
-def point2box(point, radius):
+def point_radius2box(point, radius):
     """
     点到矩形
     :param point: 点
@@ -415,7 +412,6 @@ def show_img_bgr(img_bgr, save_name=None):
     展示BGR彩色图
     """
     import cv2
-    import matplotlib
     # matplotlib.use('TkAgg')
     import matplotlib.pyplot as plt
 
@@ -859,6 +855,36 @@ def draw_box_list(img_bgr, box_list, thickness=-1, color=None,
     return ori_img
 
 
+def draw_rec_box(img_bgr, rec_box, color=None, thickness=-1,
+                 is_show=False, is_new=False, save_name=None):
+    """
+    绘制4点的四边形
+    """
+    if is_new:
+        img_bgr = copy.deepcopy(img_bgr)
+
+    if not color:
+        color = (0, 0, 255)  # 默认使用红色
+
+    ori_img = copy.copy(img_bgr)
+    img_copy = copy.copy(img_bgr)
+
+    # 绘制颜色块
+    rec_arr = np.array(rec_box, dtype=np.int32)
+    if thickness == -1:
+        ori_img = cv2.fillPoly(ori_img, [rec_arr], color)
+    else:
+        ori_img = cv2.polylines(ori_img, [rec_arr], True, tuple(color), thickness=thickness)
+    ori_img = np.clip(ori_img, 0, 255)
+
+    if thickness == -1:
+        ori_img = cv2.addWeighted(ori_img, 0.4, img_copy, 0.6, 0)
+
+    if is_show or save_name:
+        show_img_bgr(ori_img, save_name=save_name)
+    return ori_img
+
+
 def draw_rec_list(img_bgr, rec_list, color=None, thickness=-1,
                   is_text=False, is_show=False, is_new=False, save_name=None):
     """
@@ -1167,7 +1193,8 @@ def filer_boxes_by_size(boxes, r_thr=0.4):
         idx_list.append(idx)
 
     def sort_three_list(list1, list2, list3, reverse=False):
-        list1, list2, list3 = (list(t) for t in zip(*sorted(zip(list1, list2, list3), reverse=reverse)))
+        list1, list2, list3 = \
+            (list(t) for t in zip(*sorted(zip(list1, list2, list3), reverse=reverse)))
         return list1, list2, list3
 
     size_list, sorted_idxes, sorted_boxes = \
