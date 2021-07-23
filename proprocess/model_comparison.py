@@ -90,6 +90,7 @@ class ModelComparison(object):
 
         html_file = os.path.join(DATA_DIR, 'data_v2_v3.{}.html'.format(get_current_time_str()))
         paths_list, _ = traverse_dir_files(img_dir)
+        print('[Info] 文件数: {}'.format(len(paths_list)))
 
         if len(paths_list) > num:
             random.seed(47)
