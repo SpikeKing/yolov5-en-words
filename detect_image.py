@@ -21,7 +21,7 @@ class ImgDetector(object):
     """
     def __init__(self, weights=None):
         if not weights:
-            self.weights = os.path.join(DATA_DIR, 'models', 'best-3c-20210715.pt')
+            self.weights = os.path.join(DATA_DIR, 'models', 'best-3c-20210722.pt')
         else:
             self.weights = weights
         print('[Info] 模型路径: {}'.format(self.weights))

@@ -4,7 +4,6 @@
 Copyright (c) 2021. All rights reserved.
 Created by C. L. Wang on 15.7.21
 """
-
 import os
 import sys
 from multiprocessing.pool import Pool
@@ -24,6 +23,32 @@ class Processor(object):
     def __init__(self):
         self.data_path = os.path.join(DATA_DIR, 'en_full.json')
         self.out_path = os.path.join(DATA_DIR, 'en_full_with_alter.out-{}.txt'.format(get_current_time_str()))
+        print('[Info] 输入文件: {}'.format(self.data_path))
+        print('[Info] 输出文件: {}'.format(self.out_path))
+        # 已处理的图像
+        self.used1_path = os.path.join(DATA_DIR, 'en_full_with_alter.anno-v1_1.txt')
+        self.used2_path = os.path.join(DATA_DIR, 'en_lowscore.anno-v1_2.txt')
+        print('[Info] 已处理文件1: {}'.format(self.used1_path))
+        print('[Info] 已处理文件: {}'.format2(self.used2_path))
+
+    def get_used_urls(self):
+        """
+        获取已使用的urls
+        """
+        data1_lines = read_file(self.used1_path)
+        data2_lines = read_file(self.used2_path)
+        data_lines = data1_lines + data2_lines
+        url_boxes_dict = collections.defaultdict(list)
+        for data_line in data_lines:
+            data_dict = json.loads(data_line)
+            image_url = data_dict["image_original_url"]
+            anno_data = data_dict["polygon_annotation"]
+            for anno in anno_data:
+                anno_type = anno["type"]
+                if anno_type == "WenBenHang":
+                    url_boxes_dict[image_url].append(tuple(anno["coords"]))
+        print('[Info] url_boxes_dict: {}'.format(len(url_boxes_dict.keys())))
+        return url_boxes_dict
 
     @staticmethod
     def parse_pos_2_rec(pos_data):
@@ -58,59 +83,84 @@ class Processor(object):
                 cv2.imwrite(out_path, img_bgr)
 
     @staticmethod
-    def process_item(idx, data_line, idet, out_path):
+    def save_img_path(img_bgr, img_name):
+        """
+        上传图像
+        """
+        from x_utils.oss_utils import save_img_2_oss
+        oss_root_dir = "zhengsheng.wcl/Character-Detection/datasets/english-words-imgs/"
+        img_url = save_img_2_oss(img_bgr, img_name, oss_root_dir)
+        return img_url
+
+    @staticmethod
+    def process_item(idx, data_line, idet, url_boxes_dict, out_path):
         print('-' * 50)
         print('[Info] 开始: {}'.format(idx))
         data_dict = json.loads(data_line)
         # print('[Info] item: {}'.format(data_dict))
         image_url = data_dict["image_url"]
         angle = data_dict["angle"]
+        if angle != 0:  # 过滤非0图像
+            return
         ocr_result = data_dict["ocr_result"]
         # print('[Info] 手写行数: {}'.format(len(ocr_result)))
         _, img_bgr = download_url_img(image_url)
-        img_bgr = rotate_img_for_4angle(img_bgr, angle)  # 旋转图像
+        # img_bgr = rotate_img_for_4angle(img_bgr, angle)  # 旋转图像
 
+        used_boxes = url_boxes_dict[image_url]
         n_alter = 0
         for hw_idx, hw_data in enumerate(ocr_result):
             pos_data = hw_data["pos"]
             word = hw_data["word"]
+            rec_classify = hw_data["recClassify"]  # 手写25
+            if rec_classify != 25:  # 25是手写标记
+                continue
             rec_box = Processor.parse_pos_2_rec(pos_data)
             box = rec2bbox(rec_box)
+            if tuple(bbox2rec(box)) in used_boxes:
+                print('[Info] 已使用: {}'.format(box))
+                continue
             is_en = Processor.filter_en_line(word)
             if not is_en:
                 continue
             img_patch = get_cropped_patch(img_bgr, box)
             # print('[Info] is_en: {}, {}'.format(is_en, word))
-            # show_img_bgr(img_patch)
             clz_dict = idet.detect_image(img_patch)
-            if 2 not in clz_dict.keys():  # 只筛选删除的选项
+            if "2" not in clz_dict.keys():  # 只筛选删除的选项
                 continue
+
+            # show_img_bgr(img_patch)
+            image_name_x = image_url.split("/")[-1].split(".")[0]
+            image_name = "{}.jpg".format(image_name_x)
+            image_convert_url = Processor.save_img_path(img_bgr, image_name)
             # image_name = image_url.split("/")[-1].split(".")[0]
             # out_image_path = os.path.join(out_dir, "{}_{}.jpg".format(image_name, hw_idx))
             # Processor.draw_clz_dict(clz_dict, img_patch, out_image_path)
             out_dict = {
-                "image_url": image_url,
+                "image_url": image_convert_url,
+                "image_original_url": image_url,
                 "angle": angle,
-                "ocr_result": hw_data,
+                "hw_data": hw_data,
                 "clz_dict": clz_dict
             }
             out_line = json.dumps(out_dict)
             write_line(out_path, out_line)
             n_alter += 1
-        print('[Info] idx: {}, n_alter: {},  写入完成: {}'.format(idx, n_alter, image_url))
+        print('[Info] idx: {}, 涂改: {},  完成: {}'.format(idx, n_alter, image_url))
 
     @staticmethod
-    def process(lines_idx, data_lines, out_path):
+    def process(lines_idx, data_lines, url_boxes_dict, out_path):
         print('[Info] 分区: {}, 文件数量: {}'.format(lines_idx, len(data_lines)))
         idet = ImgDetector()
         # out_dir = os.path.join(DATA_DIR, 'en_full_dir')
         # mkdir_if_not_exist(out_dir)
         for idx, data_line in enumerate(data_lines):
-            Processor.process_item(idx, data_line, idet, out_path)
+            Processor.process_item(idx, data_line, idet, url_boxes_dict, out_path)
             # break
         print('[Info] 分区: {}, 完成'.format(lines_idx))
 
     def process_mul(self):
+        url_boxes_dict = self.get_used_urls()
         data_lines = read_file(self.data_path)
         n_prc = 4
         print('[Info] 进程数: {}'.format(n_prc))
@@ -120,9 +170,9 @@ class Processor(object):
             lines_param.append(data_lines[i*gap:(i+1)*gap])
         pool = Pool(n_prc)
         for idx, lines in enumerate(lines_param):
-            # Processor.process(idx, lines, self.out_path)
-            pool.apply_async(Processor.process, (idx, lines, self.out_path))
-            # break
+            # Processor.process(idx, lines, url_boxes_dict, self.out_path)
+            pool.apply_async(Processor.process, (idx, lines, url_boxes_dict, self.out_path))
+            break
         pool.close()
         pool.join()
         print('*' * 100)
@@ -165,17 +215,6 @@ class Processor(object):
             print('[Info] 处理完成: {}'.format(idx))
         print("[Info] 处理完成: {}".format(out_dir))
 
-
-    @staticmethod
-    def save_img_patch(img_bgr, img_name):
-        """
-        上传图像
-        """
-        from x_utils.oss_utils import save_img_2_oss
-        oss_root_dir = "zhengsheng.wcl/Character-Detection/datasets/english-words-imgs-20210716/"
-        img_url = save_img_2_oss(img_bgr, img_name, oss_root_dir)
-        return img_url
-
     @staticmethod
     def format_word_dict(clz_dict, hw_rec_box):
         hw_bbox = rec2bbox(hw_rec_box)
@@ -202,7 +241,7 @@ class Processor(object):
 
         image_name_x = image_url.split("/")[-1].split(".")[0]
         image_name = "{}_{}.jpg".format(image_name_x, angle)
-        image_url = Processor.save_img_patch(img_bgr, image_name)
+        image_url = Processor.save_img_path(img_bgr, image_name)
 
         res_items = []
         for image_data in image_data_list:
@@ -274,6 +313,7 @@ class Processor(object):
                 rec_list.append(coords)
             _, img_bgr = download_url_img(image_url)
             draw_rec_list(img_bgr, rec_list, save_name=out_path)
+
 
 def main():
     pro = Processor()
