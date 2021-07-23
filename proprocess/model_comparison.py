@@ -7,8 +7,13 @@ Created by C. L. Wang on 23.7.21
 
 import os
 import random
+import sys
 
 import cv2
+
+p = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if p not in sys.path:
+    sys.path.append(p)
 
 from detect_image import ImgDetector
 from myutils.cv_utils import generate_colors, draw_box_list
