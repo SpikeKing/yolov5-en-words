@@ -22,14 +22,16 @@ from myutils.cv_utils import *
 class Processor(object):
     def __init__(self):
         self.data_path = os.path.join(DATA_DIR, 'en_full.json')
-        self.out_path = os.path.join(DATA_DIR, 'en_full_with_alter.out-{}.txt'.format(get_current_time_str()))
+        self.out_path = os.path.join(DATA_DIR, 'en_full.out-{}.txt'.format(get_current_time_str()))
         print('[Info] 输入文件: {}'.format(self.data_path))
         print('[Info] 输出文件: {}'.format(self.out_path))
         # 已处理的图像
         self.used1_path = os.path.join(DATA_DIR, 'en_full_with_alter.anno-v1_1.txt')
         self.used2_path = os.path.join(DATA_DIR, 'en_lowscore.anno-v1_2.txt')
+        self.used3_path = os.path.join(DATA_DIR, 'en_full_with_alter.anno-v2.20210723.txt')
         print('[Info] 已处理文件1: {}'.format(self.used1_path))
-        print('[Info] 已处理文件: {}'.format(self.used2_path))
+        print('[Info] 已处理文件2: {}'.format(self.used2_path))
+        print('[Info] 已处理文件3: {}'.format(self.used3_path))
 
     def get_used_urls(self):
         """
@@ -37,7 +39,8 @@ class Processor(object):
         """
         data1_lines = read_file(self.used1_path)
         data2_lines = read_file(self.used2_path)
-        data_lines = data1_lines + data2_lines
+        data3_lines = read_file(self.used3_path)
+        data_lines = data1_lines + data2_lines + data3_lines
         url_boxes_dict = collections.defaultdict(list)
         for data_line in data_lines:
             data_dict = json.loads(data_line)
@@ -93,7 +96,7 @@ class Processor(object):
         return img_url
 
     @staticmethod
-    def process_item(idx, data_line, idet, url_boxes_dict, out_path):
+    def process_item(idx, data_line, idet, url_boxes_dict, out_path, is_tugai=True):
         print('-' * 50)
         print('[Info] 开始: {}'.format(idx))
         data_dict = json.loads(data_line)
@@ -108,8 +111,14 @@ class Processor(object):
         # img_bgr = rotate_img_for_4angle(img_bgr, angle)  # 旋转图像
         height, width, _ = img_bgr.shape
         used_boxes = url_boxes_dict[image_url]
-        n_alter = 0
+        n_choose = 0
         res_items = []
+
+        # ------- 全部筛选 ------- #
+        random.seed(47)
+        random.shuffle(ocr_result)
+        # ------- 全部筛选 ------- #
+
         for hw_idx, hw_data in enumerate(ocr_result):
             pos_data = hw_data["pos"]
             word = hw_data["word"]
@@ -127,7 +136,8 @@ class Processor(object):
             img_patch = get_cropped_patch(img_bgr, box)
             # print('[Info] is_en: {}, {}'.format(is_en, word))
             clz_dict = idet.detect_image(img_patch)
-            if "2" not in clz_dict.keys():  # 只筛选删除的选项
+
+            if "2" not in clz_dict.keys() and is_tugai:  # 只筛选涂改的选项
                 continue
 
             # image_name = image_url.split("/")[-1].split(".")[0]
@@ -141,9 +151,14 @@ class Processor(object):
 
             res_items.append(item)
             res_items += item_list
-            n_alter += 1
+            n_choose += 1
 
-        if n_alter != 0:
+            # ------- 全部筛选 ------- #
+            if n_choose == 2:
+                break
+            # ------- 全部筛选 ------- #
+
+        if n_choose != 0:
             image_name_x = image_url.split("/")[-1].split(".")[0]
             image_name = "{}.jpg".format(image_name_x)
             image_convert_url = Processor.save_img_path(img_bgr, image_name)
@@ -157,7 +172,7 @@ class Processor(object):
             }
             out_line = json.dumps(out_dict)
             write_line(out_path, out_line)
-            print('[Info] idx: {}, 涂改: {},  完成: {}'.format(idx, n_alter, image_url))
+            print('[Info] idx: {}, 选择 {},  完成: {}'.format(idx, n_choose, image_url))
 
     @staticmethod
     def process(lines_idx, data_lines, url_boxes_dict, out_path):
@@ -166,13 +181,16 @@ class Processor(object):
         # out_dir = os.path.join(DATA_DIR, 'en_full_dir')
         # mkdir_if_not_exist(out_dir)
         for idx, data_line in enumerate(data_lines):
-            Processor.process_item(idx, data_line, idet, url_boxes_dict, out_path)
+            Processor.process_item(idx, data_line, idet, url_boxes_dict, out_path, is_tugai=False)
             # break
         print('[Info] 分区: {}, 完成'.format(lines_idx))
 
     def process_mul(self):
         url_boxes_dict = self.get_used_urls()
         data_lines = read_file(self.data_path)
+
+        data_lines = data_lines[:2000]   # 只筛选2000张图
+
         n_prc = 4
         print('[Info] 进程数: {}'.format(n_prc))
         lines_param = []
@@ -302,7 +320,7 @@ class Processor(object):
         print('[Info] 全部完成: {}'.format(out_path))
 
     def anno_check(self):
-        img_path = os.path.join(DATA_DIR, 'en_full_with_alter.out-20210723170842.txt')
+        img_path = os.path.join(DATA_DIR, "en_full_with_alter.anno-v2.20210723.txt")
         out_dir = os.path.join(DATA_DIR, 'en_full_with_alter_anno')
         mkdir_if_not_exist(out_dir)
         data_lines = read_file(img_path)
