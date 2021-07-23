@@ -189,7 +189,9 @@ class Processor(object):
         url_boxes_dict = self.get_used_urls()
         data_lines = read_file(self.data_path)
 
-        data_lines = data_lines[:3000]   # 只筛选3000张图
+        random.seed(47)
+        random.shuffle(data_lines)
+        data_lines = data_lines[:5000]   # 只筛选4000张图
 
         n_prc = 4
         print('[Info] 进程数: {}'.format(n_prc))
