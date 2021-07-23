@@ -172,7 +172,7 @@ class Processor(object):
         for idx, lines in enumerate(lines_param):
             # Processor.process(idx, lines, url_boxes_dict, self.out_path)
             pool.apply_async(Processor.process, (idx, lines, url_boxes_dict, self.out_path))
-            break
+            # break
         pool.close()
         pool.join()
         print('*' * 100)
