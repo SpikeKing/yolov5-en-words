@@ -29,7 +29,7 @@ class Processor(object):
         self.used1_path = os.path.join(DATA_DIR, 'en_full_with_alter.anno-v1_1.txt')
         self.used2_path = os.path.join(DATA_DIR, 'en_lowscore.anno-v1_2.txt')
         print('[Info] 已处理文件1: {}'.format(self.used1_path))
-        print('[Info] 已处理文件: {}'.format2(self.used2_path))
+        print('[Info] 已处理文件: {}'.format(self.used2_path))
 
     def get_used_urls(self):
         """
