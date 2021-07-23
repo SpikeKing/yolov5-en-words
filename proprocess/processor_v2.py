@@ -189,7 +189,7 @@ class ProcessorV2(object):
         show_img_bgr(img_bgr)
 
     def check_data(self):
-        data_path = os.path.join(DATA_DIR, 'en_lowscore.anno-v1_1.txt')
+        data_path = os.path.join(DATA_DIR, 'en_lowscore.anno-v1_2.txt')
         out_dir = os.path.join(DATA_DIR, 'en_lowscore_anno')
         mkdir_if_not_exist(out_dir)
         data_lines = read_file(data_path)
@@ -218,8 +218,8 @@ class ProcessorV2(object):
 
 def main():
     prc2 = ProcessorV2()
-    prc2.process()
-    # prc2.check_data()
+    # prc2.process()
+    prc2.check_data()
 
 
 if __name__ == '__main__':

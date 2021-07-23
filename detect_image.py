@@ -19,8 +19,11 @@ class ImgDetector(object):
     """
     图像检测
     """
-    def __init__(self):
-        self.weights = os.path.join(DATA_DIR, 'models', 'best-3c-20210715.pt')
+    def __init__(self, weights=None):
+        if not weights:
+            self.weights = os.path.join(DATA_DIR, 'models', 'best-3c-20210715.pt')
+        else:
+            self.weights = weights
         print('[Info] 模型路径: {}'.format(self.weights))
 
         self.img_size = 640
@@ -222,6 +225,25 @@ def process_v3():
         break
 
 
+def draw_clz_boxes(img_bgr, clz_dict):
+    """
+    绘制类别boxes
+    """
+    keys = list(clz_dict.keys())
+    if len(keys) <= 3:
+        color_list = [(0, 0, 255), (0, 255, 0), (255, 0, 0)]
+    else:
+        color_list = generate_colors(len(keys), 47)
+
+    # 绘制boxes
+    for idx, clz in enumerate(keys):
+        box_list = clz_dict[clz]
+        clz_idx = int(clz)
+        img_bgr = draw_box_list(img_bgr, thickness=3, color=color_list[clz_idx],
+                                is_new=False, box_list=box_list)
+    return img_bgr
+
+
 def process_item():
 
     def modify_axis(boxes, base_box):
@@ -239,17 +261,17 @@ def process_item():
     img_patch = get_cropped_patch(img_bgr, line_box)
     idet = ImgDetector()
     clz_dict = idet.detect_image(img_patch)
-    color_list = [(0, 0, 255), (0, 255, 0), (255, 0, 0)]
-    keys = list(clz_dict.keys())
-    for idx, clz in enumerate(keys):
-        clz_idx = int(clz)
-        box_list = clz_dict[clz]
-
-        box_list = modify_axis(box_list, line_box)
-
-        img_bgr = draw_box_list(
-            img_bgr, thickness=3, color=color_list[clz_idx],
-            is_new=False, box_list=box_list, save_name="tmp1.jpg")
+    img_out = draw_clz_boxes(img_patch, clz_dict)
+    cv2.imwrite("tmp1.jpg", img_out)
+    # color_list = [(0, 0, 255), (0, 255, 0), (255, 0, 0)]
+    # keys = list(clz_dict.keys())
+    # for idx, clz in enumerate(keys):
+    #     clz_idx = int(clz)
+    #     box_list = clz_dict[clz]
+    #     box_list = modify_axis(box_list, line_box)
+    #     img_bgr = draw_box_list(
+    #         img_bgr, thickness=3, color=color_list[clz_idx],
+    #         is_new=False, box_list=box_list, save_name="tmp1.jpg")
 
 
 def main():

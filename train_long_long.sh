@@ -1,0 +1,1 @@
+python3 train.py --data data/en_word_v3.yaml --cfg models/yolov5x.my.yaml --weight mydata/models/best-3c-20210722.pt --batch-size 16 --epochs 1000000
