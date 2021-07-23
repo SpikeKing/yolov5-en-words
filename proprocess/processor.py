@@ -106,9 +106,10 @@ class Processor(object):
         # print('[Info] 手写行数: {}'.format(len(ocr_result)))
         _, img_bgr = download_url_img(image_url)
         # img_bgr = rotate_img_for_4angle(img_bgr, angle)  # 旋转图像
-
+        height, width, _ = img_bgr.shape
         used_boxes = url_boxes_dict[image_url]
         n_alter = 0
+        res_items = []
         for hw_idx, hw_data in enumerate(ocr_result):
             pos_data = hw_data["pos"]
             word = hw_data["word"]
@@ -129,24 +130,34 @@ class Processor(object):
             if "2" not in clz_dict.keys():  # 只筛选删除的选项
                 continue
 
-            # show_img_bgr(img_patch)
-            image_name_x = image_url.split("/")[-1].split(".")[0]
-            image_name = "{}.jpg".format(image_name_x)
-            image_convert_url = Processor.save_img_path(img_bgr, image_name)
             # image_name = image_url.split("/")[-1].split(".")[0]
             # out_image_path = os.path.join(out_dir, "{}_{}.jpg".format(image_name, hw_idx))
             # Processor.draw_clz_dict(clz_dict, img_patch, out_image_path)
+
+            hw_rec_box = Processor.parse_pos_2_rec(pos_data)
+            # print('[Info] rec_box: {}'.format(hw_rec_box))
+            item = {"coords": hw_rec_box, "type": "WenBenHang"}
+            item_list = Processor.format_word_dict(clz_dict, hw_rec_box)
+
+            res_items.append(item)
+            res_items += item_list
+            n_alter += 1
+
+        if n_alter != 0:
+            image_name_x = image_url.split("/")[-1].split(".")[0]
+            image_name = "{}.jpg".format(image_name_x)
+            image_convert_url = Processor.save_img_path(img_bgr, image_name)
+
             out_dict = {
                 "image_url": image_convert_url,
                 "image_original_url": image_url,
-                "angle": angle,
-                "hw_data": hw_data,
-                "clz_dict": clz_dict
+                "height": str(height),
+                "width": str(width),
+                "polygon_annotation": res_items
             }
             out_line = json.dumps(out_dict)
             write_line(out_path, out_line)
-            n_alter += 1
-        print('[Info] idx: {}, 涂改: {},  完成: {}'.format(idx, n_alter, image_url))
+            print('[Info] idx: {}, 涂改: {},  完成: {}'.format(idx, n_alter, image_url))
 
     @staticmethod
     def process(lines_idx, data_lines, url_boxes_dict, out_path):
@@ -291,7 +302,7 @@ class Processor(object):
         print('[Info] 全部完成: {}'.format(out_path))
 
     def anno_check(self):
-        img_path = os.path.join(DATA_DIR, 'en_full_with_alter.anno-20210716155344.txt')
+        img_path = os.path.join(DATA_DIR, 'en_full_with_alter.out-20210723170842.txt')
         out_dir = os.path.join(DATA_DIR, 'en_full_with_alter_anno')
         mkdir_if_not_exist(out_dir)
         data_lines = read_file(img_path)
