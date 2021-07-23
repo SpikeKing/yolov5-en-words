@@ -181,7 +181,10 @@ class Processor(object):
         # out_dir = os.path.join(DATA_DIR, 'en_full_dir')
         # mkdir_if_not_exist(out_dir)
         for idx, data_line in enumerate(data_lines):
-            Processor.process_item(idx, data_line, idet, url_boxes_dict, out_path, is_tugai=False)
+            try:
+                Processor.process_item(idx, data_line, idet, url_boxes_dict, out_path, is_tugai=False)
+            except Exception as e:
+                print('[Info] e: {}'.format(e))
             # break
         print('[Info] 分区: {}, 完成'.format(lines_idx))
 
@@ -322,7 +325,7 @@ class Processor(object):
         print('[Info] 全部完成: {}'.format(out_path))
 
     def anno_check(self):
-        img_path = os.path.join(DATA_DIR, "en_full_with_alter.anno-v2.20210723.txt")
+        img_path = os.path.join(DATA_DIR, "en_full.anno-v3.20210723.txt.1")
         out_dir = os.path.join(DATA_DIR, 'en_full_with_alter_anno')
         mkdir_if_not_exist(out_dir)
         data_lines = read_file(img_path)
@@ -349,8 +352,6 @@ class Processor(object):
 def main():
     pro = Processor()
     pro.process_mul()
-    # pro.data_checker()
-    # pro.format_data()
     # pro.anno_check()
 
 
