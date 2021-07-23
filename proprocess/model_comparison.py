@@ -94,7 +94,7 @@ class ModelComparison(object):
 
         if len(paths_list) > num:
             random.seed(47)
-            paths_list = random.shuffle(paths_list)
+            random.shuffle(paths_list)
             paths_list = paths_list[:num]
 
         print('[Info] 文件数: {}'.format(len(paths_list)))
