@@ -83,7 +83,7 @@ class ModelComparison(object):
         对比模型
         """
         # img_dir = os.path.join(DATA_DIR, 'images')
-        img_dir = os.path.join(DATA_DIR, 'ds_en_words_v3/images/val')
+        img_dir = os.path.join(DATA_DIR, 'ds_en_words_v3/images/val/')
         print('[Info] 对比文件夹: {}'.format(img_dir))
         num = 200
         print('[Info] num: {}'.format(num))
