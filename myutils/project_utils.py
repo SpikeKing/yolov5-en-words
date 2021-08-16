@@ -441,7 +441,7 @@ def read_file(data_file, mode='more'):
     :return: 单行或数组
     """
     try:
-        with open(data_file, 'r') as f:
+        with open(data_file, 'r', errors='ignore') as f:
             if mode == 'one':
                 output = f.read()
                 return output
