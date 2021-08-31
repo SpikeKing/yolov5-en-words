@@ -325,7 +325,7 @@ class Processor(object):
         print('[Info] 全部完成: {}'.format(out_path))
 
     def anno_check(self):
-        img_path = os.path.join(DATA_DIR, "en_full.anno-v3.20210723.txt.1")
+        img_path = os.path.join(DATA_DIR, "en_full.anno-v3.20210723.txt")
         out_dir = os.path.join(DATA_DIR, 'en_full_with_alter_anno')
         mkdir_if_not_exist(out_dir)
         data_lines = read_file(img_path)
@@ -351,8 +351,8 @@ class Processor(object):
 
 def main():
     pro = Processor()
-    pro.process_mul()
-    # pro.anno_check()
+    # pro.process_mul()
+    pro.anno_check()
 
 
 if __name__ == '__main__':
